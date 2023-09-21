@@ -1,3 +1,6 @@
+// Disable Windows console on release builds
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 // Import Bevy game engine essentials
 use bevy::{prelude::*, window::WindowResolution};
 

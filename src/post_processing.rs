@@ -199,7 +199,7 @@ impl FromWorld for PostProcessPipeline {
 #[derive(Component, Default, Clone, Copy, ExtractComponent, ShaderType)]
 pub struct PostProcessSettings {
     pub intensity: f32,
-    #[cfg(feature = "webgl2")]
+//    #[cfg(feature = "webgl2")]
     pub _webgl2_padding: Vec3,
 }
 

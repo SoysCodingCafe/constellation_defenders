@@ -21,6 +21,7 @@ impl Plugin for MechPlugin {
 				mech_animate,
 				slash_animate,
 				beam_animate,
+				dust_animate,
 			).run_if(in_state(GameState::Level))
 			.run_if(in_state(PauseState::Unpaused)))
 			.add_systems( Update, (
@@ -47,6 +48,7 @@ fn spawn_mech(
 			},
 			..default()
 		},
+		Velocity(Vec2::ZERO),
 		Mech{
 			stun_cooldown: Timer::from_seconds(STUN_COOLDOWN, TimerMode::Once),
 			slash_cooldown: Timer::from_seconds(SLASH_COOLDOWN, TimerMode::Once),
@@ -190,33 +192,94 @@ fn beam_animate(
 fn mech_move(
 	time: Res<Time>,
 	keyboard: Res<Input<KeyCode>>,
-	mut mech_query: Query<(&mut Transform, &mut TruePosition, &mut Direction, &Mech)>,
+	asset_server: Res<AssetServer>,
+	mut commands: Commands,
+	mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+	mut dust_timer: ResMut<DustTimer>,
+	mut mech_query: Query<(&mut Transform, &mut TruePosition, &mut Direction, &mut Velocity, &Mech)>,
 ) {
-	for (mut transform, mut pos, mut direction, mech) in mech_query.iter_mut() {
+	for (mut transform, mut pos, mut direction, mut velocity, mech) in mech_query.iter_mut() {
+		let mut moving = false;
 		if keyboard.pressed(UP_BUTTON) {
+			moving = true;
 			*direction = Direction::Backward;
 		} else if keyboard.pressed(DOWN_BUTTON) {
+			moving = true;
 			*direction = Direction::Forward;
 		} else if keyboard.pressed(LEFT_BUTTON) {
+			moving = true;
 			*direction = Direction::Left;
 		} else if keyboard.pressed(RIGHT_BUTTON) {
+			moving = true;
 			*direction = Direction::Right;
 		}
 		if mech.stun_cooldown.finished() && mech.beam_cooldown.finished() {
 			let slowdown = if !mech.slash_cooldown.finished() || !mech.shoot_cooldown.finished() {0.4} else {1.0};
 			if keyboard.pressed(UP_BUTTON) {
 				pos.0.y += MECH_SPEED * slowdown * time.delta_seconds();
+				//velocity.0.y = (velocity.0.y + MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
 			} else if keyboard.pressed(DOWN_BUTTON) {
 				pos.0.y -= MECH_SPEED * slowdown * time.delta_seconds();
+				//velocity.0.y = (velocity.0.y - MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
 			} else if keyboard.pressed(LEFT_BUTTON) {
 				pos.0.x -= MECH_SPEED * slowdown * time.delta_seconds();
+				//velocity.0.x = (velocity.0.x - MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
 			} else if keyboard.pressed(RIGHT_BUTTON) {
 				pos.0.x += MECH_SPEED * slowdown * time.delta_seconds();
+				//velocity.0.x = (velocity.0.x + MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
 			}
-			pos.0 = Vec2::new(pos.0.x.clamp(-72.0, 72.0), pos.0.y.clamp(-64.0, 64.0));
-			transform.translation.x = pos.0.x.round(); 
-			transform.translation.y = pos.0.y.round();
 		}
+		//if velocity.0.length() < 10.0 {velocity.0 = Vec2::ZERO} else {velocity.0 = velocity.0 * MECH_DAMPING};
+		//pos.0 += velocity.0 * time.delta_seconds();
+		pos.0 = Vec2::new(pos.0.x.clamp(-72.0, 72.0), pos.0.y.clamp(-64.0, 64.0));
+		transform.translation.x = pos.0.x.round(); 
+		transform.translation.y = pos.0.y.round();
+
+		dust_timer.0.tick(time.delta());
+		if dust_timer.0.just_finished() && moving == true {
+			commands
+				.spawn((SpriteSheetBundle {
+					transform: Transform::from_xyz(transform.translation.x, transform.translation.y, 190.0),
+					texture_atlas: texture_atlases.add(TextureAtlas::from_grid(asset_server.load("sprites/dust.png"), Vec2::new(8.0, 8.0), 2, 2, None, None)).clone(),
+					sprite: TextureAtlasSprite{
+						flip_x: if *direction == Direction::Left {true} else {false},
+						flip_y: if *direction == Direction::Forward {true} else {false},
+						index: 0,
+						custom_size: Some(Vec2::new(8.0, 8.0)),
+						..default()
+					},
+					..default()
+				},
+				TruePosition(transform.translation.xy()),
+				Dust(Timer::from_seconds(DUST_DURATION, TimerMode::Repeating)),
+				Velocity(match *direction {
+					Direction::Forward => Vec2::new(0.0, DUST_SPEED),
+					Direction::Backward => Vec2::new(0.0, -DUST_SPEED),
+					Direction::Left => Vec2::new(DUST_SPEED, 0.0),
+					Direction::Right => Vec2::new(-DUST_SPEED, 0.0),
+				}),
+				DespawnOnExitGameState,
+			));
+		}
+	}
+}
+
+fn dust_animate(
+	mut commands: Commands,
+	mut dust_query: Query<(Entity, &mut TruePosition, &mut Transform, &mut TextureAtlasSprite, &mut Dust, &Velocity)>,
+	time: Res<Time>,
+) {
+	for (entity, mut pos, mut transform, mut sprite, mut dust, velocity) in dust_query.iter_mut() {
+		dust.0.tick(time.delta());
+		if dust.0.just_finished() {
+			sprite.index += 1;
+			if sprite.index == 3 {
+				commands.entity(entity).despawn_recursive();
+			}
+		}
+		pos.0 += velocity.0 * time.delta_seconds();
+		transform.translation.x = pos.0.x.round(); 
+		transform.translation.y = pos.0.y.round();
 	}
 }
 
@@ -312,6 +375,14 @@ fn mech_shoot(
 			audio.play(asset_server.load("sfx/pew.ogg")).with_volume(SFX_VOLUME);
 			commands
 				.spawn((SpriteBundle {
+					texture: asset_server.load(if *direction == Direction::Left || *direction == Direction::Right {"sprites/bullet_right.png"}
+					else {"sprites/bullet_up.png"}),
+					sprite: Sprite {
+						flip_x: if *direction == Direction::Left {true} else {false}, 
+						flip_y: if *direction == Direction::Forward {true} else {false}, 
+						custom_size: Some(Vec2::new(4.0, 4.0)),
+						..default()
+					},
 					transform: Transform::from_xyz(transform.translation.x, transform.translation.y, 150.0),
 					..default()
 				},

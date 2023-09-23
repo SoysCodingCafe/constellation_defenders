@@ -17,6 +17,7 @@ impl Plugin for SetupPlugin {
 			// Events
 
 			// Resources
+			.insert_resource(Milky(false))
 			.insert_resource(Endless(false))
 			.insert_resource(LoadTimes(true))
 			.insert_resource(SecretCode(0))
@@ -30,10 +31,11 @@ impl Plugin for SetupPlugin {
 				total: 4,
 				current: 0,
 			})
+			.insert_resource(DustTimer(Timer::from_seconds(DUST_COOLDOWN, TimerMode::Repeating)))
 			.insert_resource(BootTimer(Timer::from_seconds(BOOT_DURATION, TimerMode::Once)))
 			.insert_resource(StartTimer(Timer::from_seconds(START_DURATION, TimerMode::Repeating)))
 			.insert_resource(LoadingTimer(Timer::from_seconds(LOADING_DURATION, TimerMode::Repeating)))
-			.insert_resource(NoEnemies(Timer::from_seconds(NO_ENEMIES_DURATION, TimerMode::Once)))
+			.insert_resource(NoEnemies(Timer::from_seconds(NO_ENEMIES_DURATION, TimerMode::Repeating)))
 			.insert_resource(WinTimer(Timer::from_seconds(WIN_DURATION, TimerMode::Repeating)))
 			.insert_resource(LevelInfo{
 				round_timer: Timer::from_seconds(ENEMY_SPAWN_DELAY, TimerMode::Repeating),
@@ -136,6 +138,7 @@ fn advance_splash_screen(
 
 fn init_constellations(
 	mut commands: Commands,
+	mut milky: ResMut<Milky>,
 ) {
 	let mut constellations = Vec::new(); 
 	let mut cassiopeia = Vec::new();
@@ -173,12 +176,15 @@ fn init_constellations(
 
 	let mut random = Vec::new();
 	if rand::random::<f32>() < 0.95 { 
-		for _ in 0..6 {
+		let total_stars = rand::Rng::gen_range(&mut rand::thread_rng(), 2..9);
+		for _ in 0..total_stars {
 			random.push(Vec2::new(((rand::random::<f32>() - 0.5) * 120.0).round() + 0.5, ((rand::random::<f32>() - 0.5) * 80.0).round() + 0.5));
 		}
+		milky.0 = false;
 	} else {
 		// The Sun
 		random.push(Vec2::new(0.5, 0.5));
+		milky.0 = true;
 	}
 
 	let endless = Vec::new();

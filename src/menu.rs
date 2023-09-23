@@ -56,16 +56,19 @@ fn spawn_menu(
 
 fn generate_random_constellation(
 	mut level_layout: ResMut<LevelLayout>,
+	mut milky: ResMut<Milky>,
 ) {
 	let mut random = Vec::new();
 	if rand::random::<f32>() < 0.95 {
-		let total_stars = rand::Rng::gen_range(&mut rand::thread_rng(), 1..9);
+		let total_stars = rand::Rng::gen_range(&mut rand::thread_rng(), 2..9);
 		for _ in 0..total_stars {
 			random.push(Vec2::new(((rand::random::<f32>() - 0.5) * 120.0).round() + 0.5, ((rand::random::<f32>() - 0.5) * 80.0).round() + 0.5));
 		}
+		milky.0 = false;
 	} else {
 		// The Sun
 		random.push(Vec2::new(0.5, 0.5));
+		milky.0 = true;
 	}
 
 	level_layout.constellations[4] = random;

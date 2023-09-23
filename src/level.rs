@@ -82,10 +82,11 @@ fn update_level_timer(
 					let direction = if r >= 0.5 {90.0} else if r >= 0.75 {180.0} else {360.0};
 					let offset = if pos.0.length() > 1.0 {(-pos.0.normalize().rotate(Vec2::from_angle(((rand::random::<f32>() - 0.5) * direction).to_radians())) * 120.0).clamp_length(120.0, 128.0)}
 					else {(-Vec2::Y.rotate(Vec2::from_angle((rand::random::<f32>() * 360.0).to_radians())) * 120.0).clamp_length(120.0, 128.0)};
+					let spec = if rand::random::<f32>() > 0.8 {0} else {1};
 					commands
 						.spawn((SpriteSheetBundle {
 							transform: Transform::from_xyz(offset.x, offset.y, 150.0),
-							texture_atlas: texture_atlases.add(TextureAtlas::from_grid(asset_server.load("sprites/enemy.png"), Vec2::new(16.0, 16.0), 2, 2, None, None)).clone(),
+							texture_atlas: texture_atlases.add(TextureAtlas::from_grid(asset_server.load(if spec == 0 {"sprites/enemy_0.png"} else {"sprites/enemy_1.png"}), Vec2::new(16.0, 16.0), 2, 2, None, None)).clone(),
 							sprite: TextureAtlasSprite{
 								index: 0,
 								custom_size: Some(Vec2::new(16.0, 16.0)),
@@ -93,7 +94,13 @@ fn update_level_timer(
 							},
 							..default()
 						},
-						Enemy,
+						Enemy{
+							spec: spec, 
+							rotation: if rand::random::<f32>() > 0.5 {1.0} else {-1.0},
+							dps: if spec == 0 {ENEMY_0_DPS} else {ENEMY_1_DPS},
+						},
+						//Velocity(Vec2::new((rand::random::<f32>() - 0.5) * ENEMY_SPEED, (rand::random::<f32>() - 0.5) * ENEMY_SPEED)),
+						Velocity(Vec2::ZERO),//(pos.0 - offset).normalize().rotate(Vec2::from_angle(80.0_f32.to_radians())) * INITIAL_TANGENTIAL_SPEED),
 						TruePosition(Vec2::new(offset.x, offset.y)),
 						AnimationTimer(Timer::from_seconds(ENEMY_ANIMATION_SPEED, TimerMode::Repeating)),
 						DespawnOnExitGameState,
@@ -109,16 +116,17 @@ fn update_level_timer(
 fn spawn_level(
 	mut commands: Commands,
 	mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+	milky: Res<Milky>,
 	retaliate: Res<Retaliate>,
 	asset_server: Res<AssetServer>,
 	level_layout: Res<LevelLayout>,
 	selected_level: Res<SelectedLevel>,
 ) {
-	let background = rand::Rng::gen_range(&mut rand::thread_rng(), 0..4);
+	let background = if milky.0 {0} else {rand::Rng::gen_range(&mut rand::thread_rng(), 1..5)};
 	commands
 		.spawn((SpriteSheetBundle {
 			transform: Transform::from_xyz(0.0, 0.0, 0.0),
-			texture_atlas: texture_atlases.add(TextureAtlas::from_grid(asset_server.load("sprites/background.png"), Vec2::new(160.0, 144.0), 2, 2, None, None)).clone(),
+			texture_atlas: texture_atlases.add(TextureAtlas::from_grid(asset_server.load("sprites/background.png"), Vec2::new(160.0, 144.0), 3, 2, None, None)).clone(),
 			sprite: TextureAtlasSprite{
 				index: background,
 				custom_size: Some(Vec2::new(160.0, 144.0)),

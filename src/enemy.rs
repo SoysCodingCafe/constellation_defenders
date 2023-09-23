@@ -75,13 +75,13 @@ fn shoot_enemy(
 	mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 	audio: Res<Audio>,
 	asset_server: Res<AssetServer>,
-	bullet_query: Query<(&Transform, With<Bullet>)>,
+	bullet_query: Query<(&TruePosition, With<Bullet>)>,
 	enemy_query: Query<(Entity, &TruePosition, &Transform, With<Enemy>)>
 ) {
-	for (transform, _) in bullet_query.iter() {
+	for (bullet_pos, _) in bullet_query.iter() {
 		let mut hit_sfx = false;
-		for (entity, pos, enemy_transform, _) in enemy_query.iter() {
-			if (transform.translation.xy() - pos.0).length() < 8.0 {
+		for (entity, enemy_pos, enemy_transform, _) in enemy_query.iter() {
+			if (bullet_pos.0 - enemy_pos.0).length() < 8.0 {
 				enemies_slain.0 += 1;
 				beam_charge.0 += 1.0;
 				commands.entity(entity).despawn_recursive();
@@ -160,7 +160,7 @@ fn enemy_animate(
 }
 
 pub fn enemy_move(
-	mut enemy_query: Query<(&mut Transform, &mut TruePosition, With<Enemy>)>,
+	mut enemy_query: Query<(&mut Transform, &mut TruePosition, &mut Velocity, &Enemy)>,
 	mut star_query: Query<(&Transform, &mut Star, Without<Enemy>)>,
 	mut mech_query: Query<(&TruePosition, &mut Mech, Without<Enemy>)>,
 	retaliate: Res<Retaliate>,
@@ -169,30 +169,66 @@ pub fn enemy_move(
 	audio: Res<Audio>,
 ) {
 	for (mech_pos, mut mech, _) in mech_query.iter_mut() {
-		for (mut enemy_transform, mut pos, _) in enemy_query.iter_mut() {
-			let mut direction = (mech_pos.0 - pos.0).normalize();
-			if (mech_pos.0 - pos.0).length() <= 32.0 && mech.stun_cooldown.finished() && retaliate.0 {
-				if (mech_pos.0 - pos.0).length() < 8.0 {
-					mech.stun_cooldown.reset();
-					audio.play(asset_server.load("sfx/unstun.ogg")).with_volume(SFX_VOLUME);
+		for (mut enemy_transform, mut enemy_pos, mut velocity, enemy) in enemy_query.iter_mut() {
+			let distance_to_mech = (mech_pos.0 - enemy_pos.0).length();
+			let mut direction = (mech_pos.0 - enemy_pos.0).normalize_or_zero();
+			let mut distance = 9999.0;
+
+			if !retaliate.0 {
+				if distance_to_mech < 36.0 || star_query.is_empty() {
+					if distance_to_mech < 28.0 {direction = -direction}
+					else if distance_to_mech < 36.0 {velocity.0 = direction.rotate(Vec2::from_angle(enemy.rotation * 90.0_f32.to_radians())) * velocity.0.length()};
+				} else if !star_query.is_empty() {
+					for (star_transform, mut star, _) in star_query.iter_mut() {
+						let target = star_transform.translation.xy() - enemy_pos.0;
+						let distance_metric = if enemy.spec == 1 {(star_transform.translation.xy() - enemy_pos.0).length()}
+						else {9999.0 - (star_transform.translation.xy() - mech_pos.0).length()};
+						if distance_metric < distance {
+							distance = distance_metric;
+							if target.length() < 8.0 {
+								star.health = (star.health - enemy.dps * time.delta_seconds()).clamp(0.0, 100.0);
+								direction = -target.normalize_or_zero();
+							} else {
+								direction = target.normalize_or_zero();
+							}
+						}
+					}
 				}
-			} else {
-				let mut distance = 9999.0;
-				for (star_transform, mut star, _) in star_query.iter_mut() {
-					let offset = star_transform.translation.xy() - pos.0;
-					if offset.length() < 8.0 {
-						star.health = (star.health - ENEMY_DPS * time.delta_seconds()).clamp(0.0, 100.0);
-						distance = 0.0;
-						direction = Vec2::ZERO;
-					} else if offset.length() < distance {
-						distance = offset.length();
-						direction = offset.normalize();
+			} else if retaliate.0 {
+				let mut stars_left = 0;
+				for (_,_,_) in star_query.iter() {stars_left+=1;};
+				if (distance_to_mech <= 36.0 && mech.stun_cooldown.finished()) || star_query.is_empty() {
+					if enemy.spec == 0 && distance_to_mech <= 36.0 && stars_left > 2 {
+						direction = -direction.rotate(Vec2::from_angle(enemy.rotation * 45.0_f32.to_radians()));
+					} 
+					if mech.stun_cooldown.finished() {
+						if distance_to_mech <= 8.0 {
+							mech.stun_cooldown.reset();
+							audio.play(asset_server.load("sfx/unstun.ogg")).with_volume(SFX_VOLUME);
+						}
+					}
+				} else if (distance_to_mech > 36.0 || !mech.stun_cooldown.finished()) || !star_query.is_empty() {
+					for (star_transform, mut star, _) in star_query.iter_mut() {
+						let target = star_transform.translation.xy() - enemy_pos.0;
+						let distance_metric = if enemy.spec == 1 {(star_transform.translation.xy() - enemy_pos.0).length()}
+						else {9999.0 - (star_transform.translation.xy() - mech_pos.0).length()};
+						if distance_metric < distance {
+							distance = distance_metric;
+							if target.length() < 8.0 {
+								star.health = (star.health - enemy.dps * time.delta_seconds()).clamp(0.0, 100.0);
+								direction = -target.normalize_or_zero();
+							} else {
+								direction = target.normalize_or_zero();
+							}
+						}
 					}
 				}
 			}
-			pos.0 += direction * ENEMY_SPEED * time.delta_seconds();
-			enemy_transform.translation.x = pos.0.x.round(); 
-			enemy_transform.translation.y = pos.0.y.round();
+
+			velocity.0 = (velocity.0 + direction * ENEMY_ACCELERATION).clamp_length(0.1, ENEMY_MAX_SPEED);
+			enemy_pos.0 += velocity.0 * time.delta_seconds();
+			enemy_transform.translation.x = enemy_pos.0.x.round(); 
+			enemy_transform.translation.y = enemy_pos.0.y.round();
 		}
 	}
 }

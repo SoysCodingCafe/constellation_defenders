@@ -35,25 +35,40 @@ pub const WIN_DURATION: f32 = 1.0;
 pub const CORPSE_DURATION: f32 = 0.05;
 pub const RETALIATE_DURATION: f32 = 2.0;
 
+pub const DUST_COOLDOWN: f32 = 0.5;
+pub const DUST_SPEED: f32 = 10.0;
+pub const DUST_DURATION: f32 = 0.25;
+
 pub const TOTAL_LOAD: usize = 9;
 
 // Mech Stats
-pub const MECH_ANIMATION_SPEED: f32 = 0.35;
 pub const MECH_SPEED: f32 = 60.0;
+pub const MAX_MECH_SPEED: f32 = 30.0;
+pub const MECH_ACCELERATION: f32 = 10.0;
+pub const MECH_DAMPING: f32 = 1.0;
+
 pub const STUN_COOLDOWN: f32 = 1.0;
 pub const SLASH_COOLDOWN: f32 = 0.5;
 pub const SHOOT_COOLDOWN: f32 = 0.25;
 pub const BEAM_COOLDOWN: f32 = 0.8;
+
 pub const BEAM_CHARGE_REQUIREMENT: f32 = 30.0;
 pub const BEAM_SPEED: f32 = 0.125;
+
 pub const SLASH_SPEED: f32 = 0.05;
-pub const BULLET_SPEED: f32 = 60.0;
+pub const BULLET_SPEED: f32 = 80.0;
+
+pub const MECH_ANIMATION_SPEED: f32 = 0.35;
 
 // Enemy Stats
 pub const ENEMY_ANIMATION_SPEED: f32 = 0.35;
-pub const ENEMY_SPEED: f32 = 25.0;
 pub const ENEMY_SPAWN_DELAY: f32 = 0.6;
-pub const ENEMY_DPS: f32 = 5.0;
+
+pub const ENEMY_MAX_SPEED: f32 = 35.0;
+pub const ENEMY_ACCELERATION: f32 = 5.0;
+
+pub const ENEMY_0_DPS: f32 = 25.0;
+pub const ENEMY_1_DPS: f32 = 10.0;
 
 // Star Stats
 pub const STAR_HEALTH: f32 = 80.0;
@@ -124,10 +139,20 @@ pub struct Beam(pub Direction);
 pub struct BeamBar;
 
 #[derive(Component)]
-pub struct Enemy;
+pub struct Enemy {
+	pub spec: usize,
+	pub rotation: f32,
+	pub dps: f32,
+}
+
+#[derive(Component)]
+pub struct Velocity(pub Vec2);
 
 #[derive(Component)]
 pub struct Corpse(pub Timer);
+
+#[derive(Component)]
+pub struct Dust(pub Timer);
 
 #[derive(Component)]
 pub struct Bullet {
@@ -165,6 +190,9 @@ pub struct Endless(pub bool);
 pub struct Retaliate(pub bool);
 
 #[derive(Resource)]
+pub struct Milky(pub bool);
+
+#[derive(Resource)]
 pub struct LoadTimes(pub bool);
 
 #[derive(Resource)]
@@ -181,6 +209,9 @@ pub struct WinState(pub usize);
 
 #[derive(Resource)]
 pub struct WinSpawned(pub usize);
+
+#[derive(Resource)]
+pub struct DustTimer(pub Timer);
 
 #[derive(Resource)]
 pub struct BootTimer(pub Timer);

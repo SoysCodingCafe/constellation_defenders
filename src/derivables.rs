@@ -68,7 +68,7 @@ pub const ENEMY_MAX_SPEED: f32 = 35.0;
 pub const ENEMY_ACCELERATION: f32 = 5.0;
 
 pub const ENEMY_0_DPS: f32 = 25.0;
-pub const ENEMY_1_DPS: f32 = 10.0;
+pub const ENEMY_1_DPS: f32 = 5.0;
 
 // Star Stats
 pub const STAR_HEALTH: f32 = 80.0;

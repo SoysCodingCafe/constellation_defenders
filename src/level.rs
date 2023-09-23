@@ -122,7 +122,7 @@ fn spawn_level(
 	level_layout: Res<LevelLayout>,
 	selected_level: Res<SelectedLevel>,
 ) {
-	let background = if milky.0 {0} else {rand::Rng::gen_range(&mut rand::thread_rng(), 1..5)};
+	let background = if milky.0 && selected_level.0 == 4 {0} else {rand::Rng::gen_range(&mut rand::thread_rng(), 1..5)};
 	commands
 		.spawn((SpriteSheetBundle {
 			transform: Transform::from_xyz(0.0, 0.0, 0.0),

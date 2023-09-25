@@ -278,7 +278,9 @@ fn pause_game(
 	mut commands: Commands,
 	mut next_pause_state: ResMut<NextState<PauseState>>,
 ) {
-	if keyboard.just_pressed(START_BUTTON) {
+	if keyboard.just_pressed(START_BUTTON)
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON) {
 		audio.play(asset_server.load("sfx/ui_select.ogg")).with_volume(SFX_VOLUME);
 		if *pause_state.get() == PauseState::Unpaused {
 			next_pause_state.set(PauseState::Paused);
@@ -334,19 +336,28 @@ fn navigate_pause(
 	mut next_game_state: ResMut<NextState<GameState>>,
 ) {
 	if keyboard.just_pressed(UP_BUTTON)
-	|| keyboard.just_pressed(DOWN_BUTTON) 
+	|| keyboard.just_pressed(ALT_UP_BUTTON)
+	|| keyboard.just_pressed(DOWN_BUTTON)
+	|| keyboard.just_pressed(ALT_DOWN_BUTTON)
 	|| keyboard.just_pressed(A_BUTTON) 
-	|| keyboard.just_pressed(B_BUTTON) 
-	|| keyboard.just_pressed(START_BUTTON) {
+	|| keyboard.just_pressed(ALT_A_BUTTON) 
+	|| keyboard.just_pressed(B_BUTTON)
+	|| keyboard.just_pressed(ALT_B_BUTTON)
+	|| keyboard.just_pressed(START_BUTTON)
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON) {
 		audio.play(asset_server.load("sfx/ui_select.ogg")).with_volume(SFX_VOLUME);
 	}
 
 	if keyboard.just_pressed(UP_BUTTON)
-	|| keyboard.just_pressed(DOWN_BUTTON) {
+	|| keyboard.just_pressed(ALT_UP_BUTTON)
+	|| keyboard.just_pressed(DOWN_BUTTON)
+	|| keyboard.just_pressed(ALT_DOWN_BUTTON) {
 		for (mut sprite, _) in pause_highlight_query.iter_mut() {
 			sprite.index = (sprite.index + 1) % 2;
 		}
-	} else if keyboard.just_pressed(A_BUTTON) {
+	} else if keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON) {
 		for (mut sprite, _) in hint_text_query.iter_mut() {
 			sprite.index = 0;
 		}
@@ -358,12 +369,15 @@ fn navigate_pause(
 				next_pause_state.set(PauseState::Unpaused);
 			}
 		}
-	} else if keyboard.just_pressed(B_BUTTON) {
+	} else if keyboard.just_pressed(B_BUTTON)
+	|| keyboard.just_pressed(ALT_B_BUTTON) {
 		for (mut sprite, _) in hint_text_query.iter_mut() {
 			sprite.index = 0;
 		}
 		next_pause_state.set(PauseState::Unpaused);
-	} else if keyboard.just_pressed(START_BUTTON) {
+	} else if keyboard.just_pressed(START_BUTTON)
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON) {
 		next_pause_state.set(PauseState::Unpaused);
 		for (mut sprite, _) in hint_text_query.iter_mut() {
 			sprite.index = 0;

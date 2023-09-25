@@ -1,7 +1,7 @@
 // Import Bevy game engine essentials
 use bevy::{prelude::*, render::{extract_component::{ExtractComponentPlugin, UniformComponentPlugin, ComponentUniforms, ExtractComponent}, render_graph::{RenderGraphApp, ViewNodeRunner, NodeRunError, ViewNode, RenderGraphContext}, RenderApp, render_resource::{Operations, RenderPassColorAttachment, RenderPassDescriptor, BindGroupEntry, BindingResource, BindGroupDescriptor, PipelineCache, BindGroupLayout, Sampler, CachedRenderPipelineId, BindGroupLayoutDescriptor, BindGroupLayoutEntry, ShaderStages, BindingType, TextureSampleType, TextureViewDimension, SamplerBindingType, SamplerDescriptor, RenderPipelineDescriptor, FragmentState, ColorTargetState, TextureFormat, ColorWrites, PrimitiveState, MultisampleState, ShaderType}, view::ViewTarget, renderer::{RenderContext, RenderDevice}, texture::BevyDefault}, core_pipeline::{core_2d, fullscreen_vertex_shader::fullscreen_shader_vertex_state}, ecs::query::QueryItem};
 
-use crate::derivables::SELECT_BUTTON;
+use crate::derivables::*;
 
 pub struct PostProcessingPlugin;
 
@@ -207,7 +207,9 @@ fn update_settings(
 	mut settings_query: Query<&mut PostProcessSettings>,
 	keyboard: Res<Input<KeyCode>>,
 ) {
-	if keyboard.just_pressed(SELECT_BUTTON) {
+	if keyboard.just_pressed(SELECT_BUTTON)
+	|| keyboard.just_pressed(ALT_SELECT_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_SELECT_BUTTON) {
 		for mut setting in settings_query.iter_mut() {
 			setting.intensity = (setting.intensity + 1.0) % 8.0;
 		}

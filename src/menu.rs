@@ -99,10 +99,14 @@ fn advance_menu(
 	mut next_game_state: ResMut<NextState<GameState>>,
 ) {
 	if keyboard.just_pressed(START_BUTTON) 
-	|| keyboard.just_pressed(A_BUTTON) {
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON)
+	|| keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON) {
 		audio.play(asset_server.load("sfx/ui_select.ogg")).with_volume(SFX_VOLUME);
 		next_game_state.set(GameState::LevelSelect);
-	} else if keyboard.just_pressed(B_BUTTON) {
+	} else if keyboard.just_pressed(B_BUTTON)
+	|| keyboard.just_pressed(ALT_B_BUTTON) {
 		ev_w_exit.send(AppExit);
 	}
 }

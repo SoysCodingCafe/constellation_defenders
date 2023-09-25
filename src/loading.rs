@@ -95,7 +95,11 @@ fn advance_loading_screen(
 		}
 	}
 
-	if loading_length.current >= loading_length.total && (keyboard.just_pressed(A_BUTTON) || keyboard.just_pressed(START_BUTTON)) {
+	if loading_length.current >= loading_length.total && (keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON)
+	|| keyboard.just_pressed(START_BUTTON)
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON)) {
 		next_game_state.set(GameState::Level);
 		for (mut sprite, _) in hint_text_query.iter_mut() {
 			sprite.index = 0;

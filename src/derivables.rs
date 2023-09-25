@@ -3,14 +3,26 @@ use bevy::prelude::*;
 
 // CONSTANTS
 // Controls
-pub const START_BUTTON: KeyCode = KeyCode::A;
-pub const SELECT_BUTTON: KeyCode = KeyCode::S;
-pub const A_BUTTON: KeyCode = KeyCode::Z;
-pub const B_BUTTON: KeyCode = KeyCode::X;
+pub const START_BUTTON: KeyCode = KeyCode::L;
+pub const SELECT_BUTTON: KeyCode = KeyCode::Semicolon;
+pub const ALT_START_BUTTON: KeyCode = KeyCode::V;
+pub const ALT_SELECT_BUTTON: KeyCode = KeyCode::B;
+pub const ALT_ALT_START_BUTTON: KeyCode = KeyCode::Return;
+pub const ALT_ALT_SELECT_BUTTON: KeyCode = KeyCode::ShiftLeft;
+
+pub const A_BUTTON: KeyCode = KeyCode::X;
+pub const B_BUTTON: KeyCode = KeyCode::C;
 pub const UP_BUTTON: KeyCode = KeyCode::Up;
 pub const DOWN_BUTTON: KeyCode = KeyCode::Down;
 pub const LEFT_BUTTON: KeyCode = KeyCode::Left;
 pub const RIGHT_BUTTON: KeyCode = KeyCode::Right;
+
+pub const ALT_A_BUTTON: KeyCode = KeyCode::J;
+pub const ALT_B_BUTTON: KeyCode = KeyCode::K;
+pub const ALT_UP_BUTTON: KeyCode = KeyCode::W;
+pub const ALT_DOWN_BUTTON: KeyCode = KeyCode::S;
+pub const ALT_LEFT_BUTTON: KeyCode = KeyCode::A;
+pub const ALT_RIGHT_BUTTON: KeyCode = KeyCode::D;
 
 // Audio
 pub const BGM_VOLUME: f64 = 1.0;

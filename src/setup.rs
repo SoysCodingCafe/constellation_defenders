@@ -130,7 +130,10 @@ fn advance_splash_screen(
 ) {
 	boot_timer.0.tick(time.delta());
 	if keyboard.just_pressed(START_BUTTON) 
-	|| keyboard.just_pressed(A_BUTTON) 
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON)
+	|| keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON)
 	|| boot_timer.0.just_finished() {
 		next_game_state.set(GameState::Menu);
 	}

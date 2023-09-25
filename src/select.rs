@@ -64,13 +64,17 @@ fn navigate_select(
 	mut highlight_query: Query<(&mut TextureAtlasSprite, With<SelectHighlight>)>,
 	mut next_game_state: ResMut<NextState<GameState>>,
 ) {
-	if keyboard.just_pressed(UP_BUTTON) {
+	if keyboard.just_pressed(UP_BUTTON)
+	|| keyboard.just_pressed(ALT_UP_BUTTON) {
 		selected_level.0 = (selected_level.0 + 3) % 6;
-	} else if keyboard.just_pressed(DOWN_BUTTON) {
+	} else if keyboard.just_pressed(DOWN_BUTTON)
+	|| keyboard.just_pressed(ALT_DOWN_BUTTON) {
 		selected_level.0 = (selected_level.0 + 3) % 6;
-	} else if keyboard.just_pressed(LEFT_BUTTON) {
+	} else if keyboard.just_pressed(LEFT_BUTTON)
+	|| keyboard.just_pressed(ALT_LEFT_BUTTON) {
 		selected_level.0 = (selected_level.0 + 5) % 6;
-	} else if keyboard.just_pressed(RIGHT_BUTTON) {
+	} else if keyboard.just_pressed(RIGHT_BUTTON)
+	|| keyboard.just_pressed(ALT_RIGHT_BUTTON) {
 		selected_level.0 = (selected_level.0 + 1) % 6;
 	}
 
@@ -78,23 +82,31 @@ fn navigate_select(
 		sprite.index = selected_level.0;
 	}
 
-	if keyboard.just_pressed(A_BUTTON) {
+	if keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON) {
 		if selected_level.0 == 5 {
 			endless.0 = true;
 		} else {
 			endless.0 = false;
 		}
 		next_game_state.set(GameState::Loading);
-	} else if keyboard.just_pressed(B_BUTTON) {
+	} else if keyboard.just_pressed(B_BUTTON)
+	|| keyboard.just_pressed(ALT_B_BUTTON) {
 		next_game_state.set(GameState::Menu);
 	}
 
 	if keyboard.just_pressed(A_BUTTON)
+	|| keyboard.just_pressed(ALT_A_BUTTON)
 	|| keyboard.just_pressed(B_BUTTON)
+	|| keyboard.just_pressed(ALT_B_BUTTON)
 	|| keyboard.just_pressed(UP_BUTTON)
+	|| keyboard.just_pressed(ALT_UP_BUTTON)
 	|| keyboard.just_pressed(DOWN_BUTTON)
+	|| keyboard.just_pressed(ALT_DOWN_BUTTON)
 	|| keyboard.just_pressed(LEFT_BUTTON)
+	|| keyboard.just_pressed(ALT_LEFT_BUTTON)
 	|| keyboard.just_pressed(RIGHT_BUTTON)
+	|| keyboard.just_pressed(ALT_RIGHT_BUTTON)
 	{
 		audio.play(asset_server.load("sfx/ui_select.ogg")).with_volume(SFX_VOLUME);
 	}

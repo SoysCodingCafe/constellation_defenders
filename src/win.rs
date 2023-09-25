@@ -51,7 +51,7 @@ fn update_win_timer(
 	time: Res<Time>,
 ) {
 	win_timer.0.tick(time.delta());
-	let manual = keyboard.just_pressed(A_BUTTON);
+	let manual = keyboard.just_pressed(A_BUTTON) || keyboard.just_pressed(ALT_A_BUTTON);
 	let mut auto = win_timer.0.just_finished();
 	
 	if auto {*clock_divider = !*clock_divider};

@@ -14,7 +14,7 @@ impl Plugin for MechPlugin {
 			))
 			.add_systems(Update,(
 				mech_move,
-				mech_slash,
+				mech_slash.before(mech_shoot),
 				mech_shoot,
 				mech_beam,
 				mech_stun.after(enemy_move),
@@ -200,31 +200,39 @@ fn mech_move(
 ) {
 	for (mut transform, mut pos, mut direction, mut velocity, mech) in mech_query.iter_mut() {
 		let mut moving = false;
-		if keyboard.pressed(UP_BUTTON) {
+		if keyboard.pressed(UP_BUTTON)
+		|| keyboard.pressed(ALT_UP_BUTTON) {
 			moving = true;
 			*direction = Direction::Backward;
-		} else if keyboard.pressed(DOWN_BUTTON) {
+		} else if keyboard.pressed(DOWN_BUTTON)
+		|| keyboard.pressed(ALT_DOWN_BUTTON) {
 			moving = true;
 			*direction = Direction::Forward;
-		} else if keyboard.pressed(LEFT_BUTTON) {
+		} else if keyboard.pressed(LEFT_BUTTON)
+		|| keyboard.pressed(ALT_LEFT_BUTTON) {
 			moving = true;
 			*direction = Direction::Left;
-		} else if keyboard.pressed(RIGHT_BUTTON) {
+		} else if keyboard.pressed(RIGHT_BUTTON)
+		|| keyboard.pressed(ALT_RIGHT_BUTTON) {
 			moving = true;
 			*direction = Direction::Right;
 		}
 		if mech.stun_cooldown.finished() && mech.beam_cooldown.finished() {
 			let slowdown = if !mech.slash_cooldown.finished() || !mech.shoot_cooldown.finished() {0.4} else {1.0};
-			if keyboard.pressed(UP_BUTTON) {
+			if keyboard.pressed(UP_BUTTON)
+			|| keyboard.pressed(ALT_UP_BUTTON) {
 				pos.0.y += MECH_SPEED * slowdown * time.delta_seconds();
 				//velocity.0.y = (velocity.0.y + MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
-			} else if keyboard.pressed(DOWN_BUTTON) {
+			} else if keyboard.pressed(DOWN_BUTTON)
+			|| keyboard.pressed(ALT_DOWN_BUTTON) {
 				pos.0.y -= MECH_SPEED * slowdown * time.delta_seconds();
 				//velocity.0.y = (velocity.0.y - MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
-			} else if keyboard.pressed(LEFT_BUTTON) {
+			} else if keyboard.pressed(LEFT_BUTTON)
+			|| keyboard.pressed(ALT_LEFT_BUTTON) {
 				pos.0.x -= MECH_SPEED * slowdown * time.delta_seconds();
 				//velocity.0.x = (velocity.0.x - MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
-			} else if keyboard.pressed(RIGHT_BUTTON) {
+			} else if keyboard.pressed(RIGHT_BUTTON)
+			|| keyboard.pressed(ALT_RIGHT_BUTTON) {
 				pos.0.x += MECH_SPEED * slowdown * time.delta_seconds();
 				//velocity.0.x = (velocity.0.x + MECH_ACCELERATION * slowdown).clamp(-MAX_MECH_SPEED, MAX_MECH_SPEED);
 			}
@@ -342,7 +350,10 @@ fn mech_slash(
 ) {
 	for (mech_direction, mut mech) in mech_query.iter_mut() {
 		mech.slash_cooldown.tick(time.delta());
-		if keyboard.just_pressed(A_BUTTON) 
+		mech.shoot_cooldown.tick(time.delta());
+		if (keyboard.pressed(A_BUTTON)
+		|| keyboard.pressed(ALT_A_BUTTON))
+		&& mech.shoot_cooldown.finished()
 		&& mech.slash_cooldown.finished() 
 		&& mech.stun_cooldown.finished() 
 		&& mech.beam_cooldown.finished(){
@@ -366,9 +377,11 @@ fn mech_shoot(
 	mut mech_query: Query<(&Transform, &Direction, &mut Mech)>,
 ) {
 	for (transform, direction, mut mech) in mech_query.iter_mut() {
-		mech.shoot_cooldown.tick(time.delta());
-		if keyboard.pressed(B_BUTTON) 
+		// Shoot cooldown ticked in mech_slash since it runs first so that slash takes priority
+		if (keyboard.pressed(B_BUTTON)
+		|| keyboard.pressed(ALT_B_BUTTON))
 		&& mech.shoot_cooldown.finished() 
+		&& mech.slash_cooldown.finished() 
 		&& mech.stun_cooldown.finished() 
 		&& mech.beam_cooldown.finished() {
 			mech.shoot_cooldown.reset();
@@ -409,7 +422,8 @@ fn mech_beam(
 	mut mech_query: Query<(&Transform, &Direction, &mut Mech)>,
 ) {
 	if beam_charge.0 >= BEAM_CHARGE_REQUIREMENT {
-		if keyboard.pressed(A_BUTTON) && keyboard.pressed(B_BUTTON) {
+		if (keyboard.pressed(A_BUTTON) || keyboard.pressed(ALT_A_BUTTON)) 
+		&& (keyboard.pressed(B_BUTTON) || keyboard.pressed(ALT_B_BUTTON)) {
 			beam_charge.0 = 0.0;
 			for (transform, direction, mut mech) in mech_query.iter_mut() {
 				mech.beam_cooldown.reset();
@@ -459,7 +473,8 @@ fn disable_retaliate(
 	mut retaliate: ResMut<Retaliate>,
 	mut secret_code: ResMut<SecretCode>,
 ) {
-	if keyboard.just_pressed(UP_BUTTON) {
+	if keyboard.just_pressed(UP_BUTTON)
+	|| keyboard.just_pressed(ALT_UP_BUTTON) {
 		if secret_code.0 == 0 
 		|| secret_code.0 == 1 
 		|| secret_code.0 == 6 
@@ -468,14 +483,16 @@ fn disable_retaliate(
 		} else {
 			secret_code.0 = 0;
 		}
-	} else if keyboard.just_pressed(DOWN_BUTTON) {
+	} else if keyboard.just_pressed(DOWN_BUTTON)
+	|| keyboard.just_pressed(ALT_DOWN_BUTTON) {
 		if secret_code.0 == 3 
 		|| secret_code.0 == 5 {
 			secret_code.0 += 1
 		} else {
 			secret_code.0 = 0;
 		}
-	} else if keyboard.just_pressed(LEFT_BUTTON) {
+	} else if keyboard.just_pressed(LEFT_BUTTON)
+	|| keyboard.just_pressed(ALT_LEFT_BUTTON) {
 		if secret_code.0 == 2 
 		|| secret_code.0 == 4
 		|| secret_code.0 == 7 {
@@ -483,19 +500,24 @@ fn disable_retaliate(
 		} else {
 			secret_code.0 = 0;
 		}
-	} else if keyboard.just_pressed(RIGHT_BUTTON) {
+	} else if keyboard.just_pressed(RIGHT_BUTTON)
+	|| keyboard.just_pressed(ALT_RIGHT_BUTTON) {
 		if secret_code.0 == 9 {
 			secret_code.0 += 1
 		} else {
 			secret_code.0 = 0;
 		}
-	} else if keyboard.just_pressed(SELECT_BUTTON) {
+	} else if keyboard.just_pressed(SELECT_BUTTON) 
+	|| keyboard.just_pressed(ALT_SELECT_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_SELECT_BUTTON){
 		if secret_code.0 == 10 {
 			secret_code.0 += 1
 		} else {
 			secret_code.0 = 0;
 		}
-	} else if keyboard.just_pressed(START_BUTTON) {
+	} else if keyboard.just_pressed(START_BUTTON) 
+	|| keyboard.just_pressed(ALT_START_BUTTON)
+	|| keyboard.just_pressed(ALT_ALT_START_BUTTON) {
 		if secret_code.0 == 11 {
 			audio.play(asset_server.load("sfx/secret.ogg")).with_volume(SFX_VOLUME);
 			secret_code.0 = 0;
